@@ -1,0 +1,11 @@
+[
+    {
+        "Name": "react-native-calendar-events",
+        "License": "MIT License",
+        "License File": "https://github.com/wmcmahan/react-native-calendar-events/blob/master/LICENSE.md",
+        "Version Number": "2.2.0",
+        "Owner" : "Will McMahan"
+        "Upstream URL": "https://github.com/wmcmahan/react-native-calendar-events",
+        "Description": "React Native module for IOS Calendar Events."
+    }
+]
