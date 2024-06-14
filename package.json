@@ -1,7 +1,7 @@
 {
-  "name": "react-native-calendar-events",
-  "version": "2.2.0",
-  "description": "React Native module for IOS Calendar Events",
+  "name": "@react-native-oh-tpl/react-native-calendar-events",
+  "version": "2.2.0-0.0.1",
+  "description": "React Native module for harmony Calendar Events",
   "homepage": "https://github.com/wmcmahan/react-native-calendar-events",
   "repository": {
     "type": "git",
@@ -12,8 +12,6 @@
   "keywords": [
     "react-native",
     "react-component",
-    "ios",
-    "android",
     "eventkit",
     "reminders",
     "calendar-events"
@@ -21,11 +19,9 @@
   "main": "src",
   "types": "src/index.d.ts",
   "files": [
-    "android/",
-    "ios/",
+    "harmony",
     "src/",
-    "package.json",
-    "RNCalendarEvents.podspec"
+    "package.json"
   ],
   "peerDependencies": {
     "react-native": ">=0.60.0"
@@ -49,6 +45,20 @@
   "husky": {
     "hooks": {
       "pre-commit": "lint-staged"
+    }
+  },
+  "dependencies": {
+    "react-native-calendar-events": "^2.2.0"
+  },
+  "overrides": {
+    "@react-native/codegen": "0.74.0"
+  },
+  "harmony": {
+    "alias": "react-native-calendar-events",
+    "codegenConfig": {
+      "specPaths": [
+        "./src"
+      ]
     }
   }
 }
