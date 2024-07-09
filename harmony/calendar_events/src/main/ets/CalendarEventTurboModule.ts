@@ -82,7 +82,7 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
   }
 
   //requestPermiss
-  async requestPermissionsAsync(): Promise<PermissionRequestResult> {
+  async requestPermissions(): Promise<AuthorizationStatus> {
     let atManager = abilityAccessCtrl.createAtManager();
     let permissionRequestResult : PermissionRequestResult = null;
     const permissions: Permissions[] = ['ohos.permission.READ_CALENDAR', 'ohos.permission.WRITE_CALENDAR'];
@@ -92,36 +92,22 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
       }).catch((error: BusinessError) => {
       Logger.error(`requestPermissionsAsync failed, code is ${error.code}, message is ${error.message}`);
     })
-    return new Promise((resolve, reject) => {
-      resolve(permissionRequestResult);
-    });;
-  }
-
-  async requestPermissions(): Promise<AuthorizationStatus> {
-    let permissionRequestResult: PermissionRequestResult = await this.requestPermissionsAsync();
     Logger.info(`requestPermissions result =` + permissionRequestResult.permissions);
     return await this.checkPermissions()
   }
 
   //findCalendars
-  async findCalendarsAsync(): Promise<calendarManager.Calendar[]> {
-    let calendar : calendarManager.Calendar[] | undefined = undefined;
-    calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
-    await calendarMgr.getAllCalendars().then(async (calendarData:calendarManager.Calendar[])=>{
-      calendar = calendarData
-    })
-    return new Promise((resolve, reject) => {
-      resolve(calendar);
-    });
-  }
-
   async findCalendars(): Promise<CalendarOptions[]> {
     let checkPermission: string = await this.checkPermissions();
     if (checkPermission == authorized) {
+      let calendar : calendarManager.Calendar[] | undefined = undefined;
       let calendarResult : CalendarOptions[] = []
-      let data: calendarManager.Calendar[] = await this.findCalendarsAsync();
-      if (data && data.length > 0) {
-        data.forEach(item => {
+      calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
+      await calendarMgr.getAllCalendars().then(
+        async (calendarData:calendarManager.Calendar[]) => {calendar = calendarData}
+      );
+      if (calendar && calendar.length > 0) {
+        calendar.forEach(item => {
           calendarResult.push(new CalendarOptions(item.id.toString(), item.getAccount().name, item.getAccount().type))
         })
       }
@@ -136,43 +122,35 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
   }
 
   //saveCalendar
-  async saveCalendarAsync(calendarOptions: CalendarOptions): Promise<string> {
-    let saveCalendarBool : boolean = false;
-    let calendar : calendarManager.Calendar | undefined = undefined;
-    const calendarAccount: calendarManager.CalendarAccount = {
-      name: calendarOptions.title,
-      type: getCalendarType(calendarOptions.type),
-      displayName: calendarOptions.displayName != undefined ? calendarOptions.displayName : ""
-    };
-    calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
-    await calendarMgr.createCalendar(calendarAccount).then((data: calendarManager.Calendar) => {
-      saveCalendarBool = true
-      calendar = data;
-    }).catch((error : BusinessError) => {
-      Logger.error(`saveCalendarAsync Failed to add event, err -> ${JSON.stringify(error)} `);
-    });
-    return new Promise((resolve) => {
-      resolve(calendar.id.toString());
-    });
-  }
-
   async saveCalendar(calendarOptions: CalendarOptions): Promise<boolean> {
     let checkPermission: string = await this.checkPermissions();
     if (checkPermission == authorized) {
-      let saveCalendarId: string = await this.saveCalendarAsync(calendarOptions);
-      if(saveCalendarId) {
+      let saveCalendarBool : boolean = false;
+      const calendarAccount: calendarManager.CalendarAccount = {
+        name: calendarOptions.title,
+        type: getCalendarType(calendarOptions.type),
+        displayName: calendarOptions.displayName != undefined ? calendarOptions.displayName : ""
+      };
+      calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
+      await calendarMgr.createCalendar(calendarAccount).then((data: calendarManager.Calendar) => {
+        saveCalendarBool = true;
+      }).catch((error : BusinessError) => {
+        Logger.error(`saveCalendarAsync Failed to add event, err -> ${JSON.stringify(error)} `);
+      });
+      if(saveCalendarBool) {
         return new Promise((resolve) => {
           resolve(true);
         });
       }
+    } else {
+      return new Promise((resolve) => {
+        resolve(false);
+      });
     }
-    return new Promise((resolve) => {
-      resolve(false);
-    });
   }
 
   //removeCalendar
-  async removeCalendarAsync(id: string): Promise<Boolean> {
+  async removeCalendarById(id: string): Promise<Boolean> {
     let removeCalendarBool : boolean = false;
     let calendar : calendarManager.Calendar | undefined = undefined;
     //根据id，查询calendar
@@ -210,7 +188,7 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
   async removeCalendar(id: string): Promise<string> {
     let checkPermission: string = await this.checkPermissions();
     if (checkPermission == authorized) {
-      let saveCalendarBool: Boolean = await this.removeCalendarAsync(id);
+      let saveCalendarBool: Boolean = await this.removeCalendarById(id);
       if (saveCalendarBool) {
         return new Promise((resolve) => {
           resolve("success");
@@ -225,7 +203,7 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
   //findEventById
   async findEventById(id: string): Promise<calendarManager.Event | null> {
     let calendar : calendarManager.Calendar | undefined = undefined;
-    let event : calendarManager.Event = undefined
+    let event : calendarManager.Event = undefined;
     let checkPermission: string = await this.checkPermissions();
     if (checkPermission == authorized) {
       calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
@@ -247,38 +225,28 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
   }
 
   //fetchAllEvents
-  async fetchAllEventsAsync(startDate: string, endDate: string,
-                            calendarIds?: string[]) : Promise<calendarManager.Event[]> {
-    let calendar : calendarManager.Calendar | undefined = undefined;
-    let event : calendarManager.Event[] = []
-    calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
-    await calendarMgr?.getCalendar().then(async (dataCalendar: calendarManager.Calendar) => {
-      calendar = dataCalendar;
-      Logger.info(`fetchAllEventsAsync Succeeded to get calendar666, data -> ${JSON.stringify(dataCalendar)}`);
-      const eventFilter = calendarManager.EventFilter;
-      let filter = null;
-      if (calendarIds && calendarIds.length > 0) {
-        filter = eventFilter.filterById(calendarIds.map(Number));
-      } else {
-        filter = eventFilter.filterByTime(Number.parseFloat(startDate), Number.parseFloat(endDate))
-      }
-      await calendar.getEvents(filter).then((dataEvent: calendarManager.Event[]) => {
-        Logger.info(`fetchAllEventsAsync Succeeded to get events, data -> ${JSON.stringify(dataEvent)}`);
-        event = dataEvent
-      }).catch((err: BusinessError) => {
-        Logger.error(`fetchAllEventsAsync Failed to get events, err -> ${JSON.stringify(err)}`);
-      });
-    });
-    return new Promise((resolve, reject) => {
-      resolve(event);
-    });
-  }
-
   async fetchAllEvents(startDate: string, endDate: string, calendarIds?: string[]): Promise<calendarManager.Event[]> {
     let checkPermission: string = await this.checkPermissions();
     let event: calendarManager.Event[] = []
     if (checkPermission == authorized) {
-      event = await this.fetchAllEventsAsync(startDate, endDate, calendarIds)
+      let calendar : calendarManager.Calendar | undefined = undefined;
+      calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
+      await calendarMgr?.getCalendar().then(async (dataCalendar: calendarManager.Calendar) => {
+        calendar = dataCalendar;
+        const eventFilter = calendarManager.EventFilter;
+        let filter = null;
+        if (calendarIds && calendarIds.length > 0) {
+          filter = eventFilter.filterById(calendarIds.map(Number));
+        } else {
+          filter = eventFilter.filterByTime(Number.parseFloat(startDate), Number.parseFloat(endDate))
+        }
+        await calendar.getEvents(filter).then((dataEvent: calendarManager.Event[]) => {
+          Logger.info(`fetchAllEventsAsync Succeeded to get events, data -> ${JSON.stringify(dataEvent)}`);
+          event = dataEvent
+        }).catch((err: BusinessError) => {
+          Logger.error(`fetchAllEventsAsync Failed to get events, err -> ${JSON.stringify(err)}`);
+        });
+      });
     }
     return new Promise((resolve, reject) => {
       resolve(event);
@@ -286,29 +254,23 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
   }
 
   //saveEvent
-  async saveEventAsync(events: calendarManager.Event): Promise<Boolean> {
-    let saveCalendarBool : boolean = false;
-    let calendar : calendarManager.Calendar | undefined = undefined;
-    calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
-    await calendarMgr?.getCalendar().then(async (calendarData:calendarManager.Calendar) => {
-      Logger.info(`saveEventAsync Succeeded to get calendar, data -> ${JSON.stringify(calendarData)}`);
-      calendar = calendarData;
-      await calendar?.addEvent(events).then((data: number) => {
-        saveCalendarBool = true
-      }).catch((err: BusinessError) => {
-        Logger.error(`saveCalendarAsync Failed to add event, err -> ${JSON.stringify(err)} `);
-      });
-    })
-    return new Promise((resolve) => {
-      resolve(saveCalendarBool);
-    });
-  }
-
   async saveEvent(title: string, details: EventDetails, options?: Options): Promise<String> {
     let checkPermission: string = await this.checkPermissions();
     if (checkPermission == authorized) {
-      const event: calendarManager.Event = details;
-      let saveCalendarBool: Boolean = await this.saveEventAsync(event);
+      let saveCalendarBool : boolean = false;
+      let calendar : calendarManager.Calendar | undefined = undefined;
+      const events: calendarManager.Event = details;
+      calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
+      await calendarMgr?.getCalendar().then(
+        async (calendarData:calendarManager.Calendar) => {
+          Logger.info(`saveEventAsync Succeeded to get calendar, data -> ${JSON.stringify(calendarData)}`);
+          calendar = calendarData;
+          await calendar?.addEvent(events).then((data: number) => {
+            saveCalendarBool = true
+          }).catch((err: BusinessError) => {
+            Logger.error(`saveCalendarAsync Failed to add event, err -> ${JSON.stringify(err)} `);
+          });
+        })
       if (saveCalendarBool) {
         return new Promise((resolve) => {
           resolve("success");
@@ -321,28 +283,22 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
   }
 
   //removeEvent
-  async removeEventAsync(id: string, options?: Options): Promise<Boolean> {
-    let removeCalendarBool : boolean = false;
-    let calendar : calendarManager.Calendar | undefined = undefined;
-    calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
-    await calendarMgr?.getCalendar().then(async (calendarData:calendarManager.Calendar) => {
-      calendar = calendarData;
-      await calendar?.deleteEvent(Number.parseFloat(id)).then(() => {
-        removeCalendarBool = true
-      }).catch((err: BusinessError) => {
-        Logger.error(`removeEventAsync Failed to delete event, err -> ${JSON.stringify(err)}`);
-      });
-    })
-    return new Promise((resolve) => {
-      resolve(removeCalendarBool);
-    });
-  }
-
   async removeEvent(id: string): Promise<string> {
     let checkPermission: string = await this.checkPermissions();
     if (checkPermission == authorized) {
-      let saveCalendarBool: Boolean = await this.removeEventAsync(id);
-      if (saveCalendarBool) {
+      let removeCalendarBool : boolean = false;
+      let calendar : calendarManager.Calendar | undefined = undefined;
+      calendarMgr = calendarManager.getCalendarManager(this.ctx.uiAbilityContext);
+      await calendarMgr?.getCalendar().then(
+        async (calendarData:calendarManager.Calendar) => {
+          calendar = calendarData;
+          await calendar?.deleteEvent(Number.parseFloat(id)).then(() => {
+            removeCalendarBool = true
+          }).catch((err: BusinessError) => {
+            Logger.error(`removeEventAsync Failed to delete event, err -> ${JSON.stringify(err)}`);
+          });
+        })
+      if (removeCalendarBool) {
         return new Promise((resolve) => {
           resolve("success");
         });
