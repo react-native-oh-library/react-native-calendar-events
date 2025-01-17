@@ -21,24 +21,60 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+//saveCalendar
+export interface CalendarOptionsSourceLibrary {
+  title: string;
+  color: string;
+  entityType: CalendarEntityTypeiOS;
+  name: string;
+  accessLevel: CalendarAccessLevelAndroid;
+  ownerAccount: string;
+  source: CalendarAccountSourceAndroid;
+}
+export type CalendarEntityTypeiOS = "event" | "reminder";
 
+export type CalendarAccessLevelAndroid =
+  | "contributor"
+  | "editor"
+  | "freebusy"
+  | "override"
+  | "owner"
+  | "read"
+  | "respond"
+  | "root";
+
+export type CalendarAccountSourceAndroid =
+  | {
+    name: string;
+    type: string;
+  }
+    | {
+    name: string;
+    isLocalAccount: boolean;
+  };
+
+//findCalendars
+export class Calendar {
+  id: string;
+  title: string;
+  type: string;
+  source: string;
+  isPrimary: boolean;
+  allowsModifications: boolean;
+  color: string;
+  allowedAvailabilities: string[];
+  constructor(id?: string, title?: string, type?: string) {
+    this.id = id;
+    this.title = title;
+    this.type = type;
+  }
+}
+
+
+//harm
 export type AuthorizationStatus =
   | "denied"
   | "restricted"
   | "authorized"
   | "undetermined";
 
-//calendar add
-export class CalendarOptions {
-  id?: string;
-  title?: string;
-  type: string;
-  displayName?: string;
-
-  constructor(id?: string, title?: string, type?: string, displayName?: string) {
-    this.id = id;
-    this.title = title;
-    this.type = type;
-    this.displayName = displayName;
-  }
-}

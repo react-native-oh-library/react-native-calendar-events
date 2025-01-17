@@ -23,6 +23,9 @@
  */
 
 import calendarManager from '@ohos.calendarManager';
+import { CalendarEventWritable, EventDetails, Options} from './EventType';
+import Logger from './Logger';
+
 export function getCalendarType(type: string): calendarManager.CalendarType {
   if (type == 'local') {
     return calendarManager.CalendarType.LOCAL
@@ -40,4 +43,43 @@ export function getCalendarType(type: string): calendarManager.CalendarType {
     return calendarManager.CalendarType.SUBSCRIBED
   }
   return calendarManager.CalendarType.LOCAL
+}
+
+export function dataConversion(title:string,calendarEventWritable: CalendarEventWritable,eventDetails:EventDetails, options?: Options): EventDetails {
+  if (title != null) {
+    eventDetails.setTitle(title)
+  }
+  if (calendarEventWritable) {
+    if (calendarEventWritable.id != null && calendarEventWritable.id.trim().length > 0) {
+      eventDetails.setId(calendarEventWritable.id)
+    } else {
+      eventDetails.setId(new Date().getTime().toString())
+    }
+    if (calendarEventWritable.location != null) {
+      eventDetails.setLocation(calendarEventWritable.location)
+    }
+    if (calendarEventWritable.startDate != null && calendarEventWritable.startDate.trim().length > 0) {
+      eventDetails.setStartTime((new Date(calendarEventWritable.startDate)).getTime())
+      if (calendarEventWritable.endDate != null && calendarEventWritable.endDate.trim().length > 0) {
+        eventDetails.setEndTime((new Date(calendarEventWritable.endDate)).getTime())
+      } else {//取开始时间加一个小时
+        eventDetails.setEndTime((new Date(calendarEventWritable.startDate)).getTime() + 1000 * 60 * 60)
+      }
+    } else {
+      Logger.error("add event require `startDate`");
+    }
+    if (calendarEventWritable.allDay != null) {
+      eventDetails.setIsAllDay(calendarEventWritable.allDay)
+    }
+    if (calendarEventWritable.timeZone != null) {
+      eventDetails.setTimeZone(calendarEventWritable.timeZone)
+    }
+    if (calendarEventWritable.recurrenceRule != null) {
+      eventDetails.setRecurrenceRule(calendarEventWritable.recurrenceRule)
+    }
+    if (calendarEventWritable.description != null) {
+      eventDetails.setDescription(calendarEventWritable.description)
+    }
+  }
+  return eventDetails
 }
