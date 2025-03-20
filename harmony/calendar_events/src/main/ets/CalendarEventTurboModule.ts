@@ -160,6 +160,8 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
           Logger.error("new calendars require a `source` object with a `name`");
           resolve(false)
         }
+      } else {
+        resolve(false)
       }
     })
     if (result) {
@@ -361,10 +363,12 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
             await calendar?.addEvent(events).then((data: number) => {
               resolve(true);
             }).catch((err: BusinessError) => {
-              resolve("false")
+              resolve(false)
               Logger.error(`saveCalendarAsync Failed to add event, err -> ${JSON.stringify(err)} `);
             });
           })
+      } else {
+        resolve(false);
       }
     })
     if (result) {
@@ -391,14 +395,14 @@ export class CalendarEventTurboModule extends TurboModule implements TM.RNCalend
               calendar = calendarData;
               calendar?.deleteEvent(Number.parseFloat(id), (err: BusinessError) => {
                 if (err) {
-                  resolve("false")
+                  resolve(false)
                 } else {
-                  resolve("true")
+                  resolve(true)
                 }
               });
             })
       } else{
-          resolve("false");
+          resolve(false);
       }
     });
     if (result) {
